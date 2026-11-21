@@ -1,0 +1,33 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Painel de Vendas · Grupo Viamar</title><meta name="theme-color" content="#0f1b33"><meta name="robots" content="noindex,nofollow"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Painel de Vendas">
+<link rel="manifest" href="manifest.json"><link rel="icon" href="icone.svg"><link rel="apple-touch-icon" href="icone.png">
+<style>*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:Inter,'Segoe UI',system-ui,-apple-system,sans-serif;background:radial-gradient(900px 500px at 10% -10%,rgba(37,99,235,.35),transparent 60%),radial-gradient(700px 400px at 100% 110%,rgba(124,92,255,.3),transparent 60%),#0b1428;color:#e7ecf5}
+.box{min-height:100%;display:grid;place-items:center;padding:24px}.card{width:min(380px,100%);background:rgba(17,26,43,.8);border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:28px 24px;box-shadow:0 20px 50px rgba(0,0,0,.4);backdrop-filter:blur(10px)}
+.logo{width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#2563eb,#4f46e5);display:grid;place-items:center;margin-bottom:14px}h1{font-size:21px;margin:0 0 4px}p{margin:0 0 18px;color:#8a97b2;font-size:13.5px}
+input[type=password]{width:100%;font:inherit;font-size:16px;padding:12px 14px;border-radius:12px;border:1px solid #2c3a57;background:#0b1428;color:#fff;outline:none}input:focus{border-color:#5b8cff}
+label.l{display:flex;gap:8px;align-items:center;font-size:13px;color:#8a97b2;margin:12px 0 16px}button{width:100%;font:inherit;font-weight:700;font-size:15px;padding:12px;border:0;border-radius:12px;background:#2563eb;color:#fff;cursor:pointer}
+.err{color:#f87171;font-size:13px;min-height:18px;margin-top:10px}.at{font-size:12px;color:#8a97b2;margin-top:14px;text-align:center}</style></head><body><div class="box"><form class="card" id="f">
+<div class="logo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></div>
+<h1>Painel de Vendas</h1><p>Grupo Viamar · acesso restrito</p><input type="password" id="s" placeholder="Senha" autocomplete="current-password" autofocus>
+<label class="l"><input type="checkbox" id="lembrar" checked> Lembrar neste aparelho</label><button id="b">Entrar</button><div class="err" id="e"></div><div class="at">Atualizado em 21/11/2026 às 09:03</div></form></div>
+<script>
+(function(){ /* tudo dentro de uma função: o painel aberto depois declara '$' e outros nomes no mesmo espaço global */
+const $=id=>document.getElementById(id);
+async function abrir(senha,silencioso){const b=$('b');b.disabled=true;b.textContent='Abrindo…';$('e').textContent='';
+ try{const r=await fetch('dados.bin?v=6dbb4ff558',{cache:'no-store'});const buf=new Uint8Array(await r.arrayBuffer());if(new TextDecoder().decode(buf.slice(0,7))!=='VIAMAR1')throw new Error('arquivo');
+  const salt=buf.slice(7,23),iv=buf.slice(23,39),mac=buf.slice(39,71),ct=buf.slice(71);
+  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(senha),'PBKDF2',false,['deriveBits']);
+  const bits=new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:150000,hash:'SHA-256'},base,512));
+  const kh=await crypto.subtle.importKey('raw',bits.slice(32),{name:'HMAC',hash:'SHA-256'},false,['verify']);
+  const dados=new Uint8Array(iv.length+ct.length);dados.set(iv);dados.set(ct,iv.length);
+  if(!await crypto.subtle.verify('HMAC',kh,mac,dados))throw new Error('senha');
+  const ka=await crypto.subtle.importKey('raw',bits.slice(0,32),{name:'AES-CTR'},false,['decrypt']);
+  const gz=await crypto.subtle.decrypt({name:'AES-CTR',counter:iv,length:128},ka,ct);
+  const html=await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+  try{if($('lembrar').checked)localStorage.setItem('viamar-senha',senha);else localStorage.removeItem('viamar-senha')}catch(e){}
+  document.open();document.write(html);document.close()}
+ catch(err){b.disabled=false;b.textContent='Entrar';if(err.message==='senha'){try{localStorage.removeItem('viamar-senha')}catch(e){}if(!silencioso)$('e').textContent='Senha incorreta.'}else $('e').textContent='Não foi possível abrir ('+err.message+'). Verifique a internet e tente de novo.'}}
+$('f').addEventListener('submit',e=>{e.preventDefault();abrir($('s').value)});
+try{const s=localStorage.getItem('viamar-senha');if(s){$('s').value=s;abrir(s,true)}}catch(e){}
+})();
+</script></body></html>
