@@ -1,0 +1,1 @@
+{"name": "Painel de Vendas · Grupo Viamar", "short_name": "Painel de Vendas", "start_url": "./", "display": "standalone", "background_color": "#0b1428", "theme_color": "#0f1b33", "icons": [{"src": "icone.svg", "sizes": "any", "type": "image/svg+xml"}, {"src": "icone.png", "sizes": "180x180", "type": "image/png"}]}
